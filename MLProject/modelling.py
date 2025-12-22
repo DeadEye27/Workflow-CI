@@ -6,51 +6,47 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from pathlib import Path
 import os
+import sys
 
 # 1. Setup Path
-# Menggunakan relative path agar lebih fleksibel dan tidak error saat pindah folder
-BASE_DIR = Path.cwd() # Mengambil folder saat ini secara otomatis
-MLRUNS_DIR = BASE_DIR / "mlruns"
-
-# Pastikan folder mlruns ada (opsional, mlflow biasanya otomatis membuatnya)
-if not MLRUNS_DIR.exists():
-    MLRUNS_DIR.mkdir(parents=True, exist_ok=True)
-
-# Set tracking URI ke folder lokal dengan format yang benar
-# Kita gunakan path absolut dengan prefix file:/// agar konsisten
-tracking_uri = "file:///" + str(MLRUNS_DIR).replace("\\", "/")
-mlflow.set_tracking_uri(tracking_uri)
+BASE_DIR = Path.cwd()
+csv_filename = "data_processed.csv"
+csv_path = BASE_DIR / csv_filename
 
 mlflow.set_experiment("Churn_Prediction_Local")
 mlflow.autolog()
 
 # 2. Load Data
-# Menggunakan nama file langsung (asumsi file ada di folder yang sama dengan script)
-csv_filename = "data_processed.csv"
-csv_path = BASE_DIR / csv_filename
 
 if not csv_path.exists():
-    # Coba cari path manual jika tidak ketemu di current directory
-    # Fallback ke path hardcoded jika script dijalankan dari tempat berbeda
-    csv_path = Path(r"D:\Abid\Kuliah\Dicoding Asah\Submission_SIstem_Machine_Learning\Membangun_model\data_processed.csv")
+    
+    fallback_path = Path(r"D:\Abid\Kuliah\Dicoding Asah\Submission_SIstem_Machine_Learning\Membangun_model\data_processed.csv")
+    if fallback_path.exists():
+        csv_path = fallback_path
+    else:
+       
+        local_csv = Path("data_processed.csv")
+        if local_csv.exists():
+            csv_path = local_csv
 
 if not csv_path.exists():
-    print(f"Error: File tidak ditemukan di {csv_path}")
+    print(f"Error: File '{csv_filename}' tidak ditemukan di: {BASE_DIR}")
+    
+    print("Isi folder saat ini:", os.listdir(BASE_DIR))
+    sys.exit(1) 
 else:
     print(f"Memuat data dari: {csv_path}")
+    
     print(f"Tracking URI MLflow: {mlflow.get_tracking_uri()}")
     
     data = pd.read_csv(csv_path)
 
     # 3. Preprocessing & Split
-    # Pastikan kolom Churn ada sebelum drop
     if "Churn" in data.columns:
         X = data.drop(columns=["Churn"])
         y = data["Churn"]
     else:
-        # Fallback jika target kolom berbeda namanya atau sudah dipisah
-        print("Kolom 'Churn' tidak ditemukan, cek nama kolom data Anda.")
-        # Contoh safety (sesuaikan jika perlu):
+        print("Kolom 'Churn' tidak ditemukan, menggunakan kolom terakhir sebagai target.")
         X = data.iloc[:, :-1]
         y = data.iloc[:, -1]
 
@@ -58,7 +54,7 @@ else:
         X, y, test_size=0.2, random_state=42
     )
 
-    # 4. Training & Tracking dengan MLflow
+    
     with mlflow.start_run() as run:
         print(f"Memulai training... (Run ID: {run.info.run_id})")
         
@@ -95,6 +91,3 @@ else:
         )
 
         print("Training selesai!")
-        print(f"Data tersimpan di: {MLRUNS_DIR}")
-        print("\nUntuk melihat dashboard, jalankan perintah berikut di terminal:")
-        print("mlflow ui")
