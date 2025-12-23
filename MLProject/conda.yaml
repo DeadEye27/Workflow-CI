@@ -1,11 +1,10 @@
-name: churn-prediction-env
+name: churn-env
 channels:
-  - conda-forge
   - defaults
 dependencies:
   - python=3.10
+  - scikit-learn
+  - pandas
   - pip
   - pip:
-    - mlflow
-    - scikit-learn
-    - pandas
+    - mlflow>=2.0.0

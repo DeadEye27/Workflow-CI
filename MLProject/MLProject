@@ -1,4 +1,4 @@
-name: Churn_Prediction_Project
+name: Churn Prediction Project
 
 conda_env: conda.yaml
 

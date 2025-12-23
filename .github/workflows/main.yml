@@ -1,28 +1,36 @@
-name: MLflow Training Pipeline
+name: MLflow Training Workflow
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: 
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  train-model:
+  training:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install mlflow scikit-learn pandas
 
-      - name: Run Model Training
-        run: |
-          mlflow run ./MLProject --env-manager=local
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mlflow pandas scikit-learn
+
+
+    - name: Run Model Training
+      env:
+        MLFLOW_TRACKING_URI: file:./mlruns
+      run: |
+        cd MLProject
+        mlflow run . --env-manager=local

@@ -13,30 +13,24 @@ BASE_DIR = Path.cwd()
 csv_filename = "data_processed.csv"
 csv_path = BASE_DIR / csv_filename
 
-mlflow.set_experiment("Churn_Prediction_Local")
 mlflow.autolog()
 
 # 2. Load Data
-
 if not csv_path.exists():
-    
     fallback_path = Path(r"D:\Abid\Kuliah\Dicoding Asah\Submission_SIstem_Machine_Learning\Membangun_model\data_processed.csv")
     if fallback_path.exists():
         csv_path = fallback_path
     else:
-       
         local_csv = Path("data_processed.csv")
         if local_csv.exists():
             csv_path = local_csv
 
 if not csv_path.exists():
     print(f"Error: File '{csv_filename}' tidak ditemukan di: {BASE_DIR}")
-    
     print("Isi folder saat ini:", os.listdir(BASE_DIR))
     sys.exit(1) 
 else:
     print(f"Memuat data dari: {csv_path}")
-    
     print(f"Tracking URI MLflow: {mlflow.get_tracking_uri()}")
     
     data = pd.read_csv(csv_path)
@@ -54,40 +48,49 @@ else:
         X, y, test_size=0.2, random_state=42
     )
 
-    
-    with mlflow.start_run() as run:
-        print(f"Memulai training... (Run ID: {run.info.run_id})")
-        
-        # Inisialisasi Model
-        model = GradientBoostingClassifier(
-            n_estimators=200,
-            learning_rate=0.5,
-            max_depth=4,
-            random_state=42
-        )
+if not mlflow.active_run():
 
-        # Fit Model
-        model.fit(X_train, y_train)
+    mlflow.set_experiment("Churn_Prediction_Local")
 
-        # Prediksi
-        y_pred = model.predict(X_test)
+active_run = mlflow.active_run()
 
-        # Evaluasi
-        accuracy = accuracy_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
+run_cmd = active_run if active_run else mlflow.start_run()
 
-        print("Classification Report:")
-        print(classification_report(y_test, y_pred))
+with run_cmd as run:
+    if not active_run:
+        print(f"Memulai training manual... (Run ID: {run.info.run_id})")
+    else:
+        print(f"Melanjutkan run dari Workflow CI/CD... (Run ID: {run.info.run_id})")
 
-        # Log Metrics Manual (Opsional)
-        mlflow.log_metric("test_accuracy", accuracy)
-        mlflow.log_metric("test_f1_score", f1)
+    model = GradientBoostingClassifier(
+        n_estimators=200,
+        learning_rate=0.5,
+        max_depth=4,
+        random_state=42
+    )
 
-        # Log Model
-        mlflow.sklearn.log_model(
-            model,
-            artifact_path="model",
-            input_example=X_train.head()
-        )
+    # Fit Model
+    model.fit(X_train, y_train)
 
-        print("Training selesai!")
+    # Prediksi
+    y_pred = model.predict(X_test)
+
+    # Evaluasi
+    accuracy = accuracy_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
+
+    # Log Metrics Manual 
+    mlflow.log_metric("test_accuracy", accuracy)
+    mlflow.log_metric("test_f1_score", f1)
+
+    # Log Model
+    mlflow.sklearn.log_model(
+        model,
+        artifact_path="model",
+        input_example=X_train.head()
+    )
+
+    print("Training selesai!")
