@@ -31,7 +31,6 @@ jobs:
     - name: Run Model Training
       env:
         MLFLOW_TRACKING_URI: file:./mlruns
-      # Tambahkan --experiment-name agar run dibuat di eksperimen yang benar sejak awal
       run: |
         cd MLProject
         mlflow run . --env-manager=local --experiment-name Churn_Prediction_Local
