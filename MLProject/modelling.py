@@ -13,6 +13,10 @@ BASE_DIR = Path.cwd()
 csv_filename = "data_processed.csv"
 csv_path = BASE_DIR / csv_filename
 
+
+if os.environ.get("MLFLOW_RUN_ID") is None:
+    mlflow.set_experiment("Churn_Prediction_Local")
+
 mlflow.autolog()
 
 # 2. Load Data
@@ -48,20 +52,10 @@ else:
         X, y, test_size=0.2, random_state=42
     )
 
-if not mlflow.active_run():
-
-    mlflow.set_experiment("Churn_Prediction_Local")
-
-active_run = mlflow.active_run()
-
-run_cmd = active_run if active_run else mlflow.start_run()
-
-with run_cmd as run:
-    if not active_run:
-        print(f"Memulai training manual... (Run ID: {run.info.run_id})")
-    else:
-        print(f"Melanjutkan run dari Workflow CI/CD... (Run ID: {run.info.run_id})")
-
+with mlflow.start_run() as run:
+    print(f"Memulai training... (Run ID: {run.info.run_id})")
+    print(f"Eksperimen ID: {run.info.experiment_id}")
+    
     model = GradientBoostingClassifier(
         n_estimators=200,
         learning_rate=0.5,
