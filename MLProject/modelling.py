@@ -1,6 +1,7 @@
 import mlflow
 import mlflow.sklearn
 import pandas as pd
+import joblib
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, classification_report
@@ -88,3 +89,6 @@ with mlflow.start_run() as run:
     )
 
     print("Training selesai!")
+    
+    joblib.dump(model, "model.pkl")
+    print("Model berhasil disimpan sebagai model.pkl")
